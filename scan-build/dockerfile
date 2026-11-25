@@ -45,6 +45,13 @@ RUN chmod +x /apps/ext/katana/katana
 RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 RUN echo 'Asia/Shanghai' >/etc/timezone
 
+# go-rod(httpx 截图/katana,v0.116.2)在 arm64 上无法在线下载浏览器:
+# 它要求缓存路径 ~/.cache/rod/browser/chromium-1124/chrome(arm64 用 playwright 1124,
+# 二进制名固定为 chrome),把 apt 安装的 chromium 链接过去(已实测通过其 --dump-dom 校验)
+RUN mkdir -p /root/.cache/rod/browser/chromium-1124 /root/.cache/rod/browser/chromium-1321438 && \
+    ln -sf /usr/bin/chromium /root/.cache/rod/browser/chromium-1124/chrome && \
+    ln -sf /usr/bin/chromium /root/.cache/rod/browser/chromium-1321438/chrome
+
 ENV LANG C.UTF-8
 
 ENTRYPOINT ["/apps/ScopeSentry-Scan"]

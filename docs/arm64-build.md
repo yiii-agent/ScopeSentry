@@ -57,13 +57,23 @@ docker logs scope-sentry | grep -A3 'IMPORTANT NOTICE'
   **https://github.com/Autumn-27/ksubdomain**(Go 1.17 + gopacket,可用 1.24 编译)。
 - 必须用 `CGO_ENABLED=1` 并安装 `libpcap-dev`。
 
-### 3. go-rod 找不到 arm64 浏览器
-- httpx/go-rod 默认在线下载 chromium,但 `chromium-browser-snapshots` 没有 arm64 版,
-  报 `can't find a browser binary for your OS`。
-- 镜像内已通过 apt 安装 chromium,在 compose 的扫描端环境变量中指定:
-  `ROD_BROWSER_BIN: /usr/bin/chromium`。
+### 3. go-rod 浏览器(arm64 无在线下载源,需两处配合)
+- httpx/go-rod 默认在线下载 chromium,但 playwright CDN 对 arm64 返回 400,
+  初始化失败后 `HttpxRun` 为 nil,资产测绘整段静默跳过,下游模块收不到数据。
+- 处理分两层:
+  1. **rod 缓存路径**(`scan-build/dockerfile`):httpx 内嵌 rod(v0.116.2)不读
+     `ROD_BROWSER_BIN`,只认缓存路径 `~/.cache/rod/browser/chromium-1124/chrome`
+     (arm64 对应 playwright revision 1124,**二进制名必须是 `chrome`**),
+     构建时把 apt 安装的 chromium 链接到该路径;
+  2. **ROD_BROWSER_BIN**(`docker-compose.arm64.yml`):katana 的 rod 启动器
+     通过该环境变量直接使用镜像内 `/usr/bin/chromium`。
 
-### 4. 前端无需单独构建
+### 4. HttpxClose 空指针导致任务结束崩溃(上游 bug,fork 已修)
+- `pkg/utils/httpxrun.go` 的 `HttpxClose()` 未判空,httpx 初始化失败时
+  每次任务结束必触发 panic,扫描进程被 docker 反复拉起。
+- 本 fork 已加判空修复(见 ScopeSentry-Scan 仓库同主题提交)。
+
+### 5. 前端无需单独构建
 前端(Vue)产物通过 `go:embed static/*` 打包进服务端二进制
 (`cmd/main/main.go:64`),编译服务端时已包含,不存在独立的前端容器。
 

@@ -101,8 +101,9 @@ services:
     environment:
       NodeName: node
       TimeZoneName: Asia/Shanghai
-      # go-rod(httpx 截图/浏览器指纹)使用镜像内 apt 安装的 chromium,
-      # 不让它在线下载(在线源没有 arm64 版本)
+      # katana 的 go-rod 启动器通过 ROD_BROWSER_BIN 使用镜像内 apt 安装的 chromium;
+      # httpx 内嵌的 rod 走缓存路径 ~/.cache/rod/browser/chromium-1124/chrome,
+      # 由 scan-build/dockerfile 预先链接(arm64 无在线浏览器下载源)
       ROD_BROWSER_BIN: /usr/bin/chromium
       MONGODB_IP: 127.0.0.1
       MONGODB_PORT: 27017
