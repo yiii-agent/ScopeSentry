@@ -1,0 +1,20 @@
+# ScopeSentry 服务端 arm64 版(基于官方 dockerfile,COPY 路径改为本地编译的 arm64 二进制)
+# 构建:先运行 scripts/build-arm64.sh 生成 dist/ScopeSentry_linux_arm64_v1/ScopeSentry
+# docker build -f dockerfile.arm64 -t scopesentry-server-arm64:<ver> .
+FROM python:3.7-slim
+
+ENV TZ=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+RUN apt-get update && \
+    apt-get install -y git curl ca-certificates libcurl4-openssl-dev vim unzip && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt/ScopeSentry/
+
+COPY dist/ScopeSentry_linux_arm64_v1/ScopeSentry /opt/ScopeSentry/
+
+RUN chmod +x /opt/ScopeSentry/ScopeSentry
+
+ENTRYPOINT ["/opt/ScopeSentry/ScopeSentry"]
